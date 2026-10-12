@@ -1,0 +1,18 @@
+[general]
+name=BlocksNet
+qgisMinimumVersion=3.0
+description=BlocksNet wrapper for QGIS.
+about=BlocksNet wrapper for QGIS. Upstream library: https://github.com/aimclub/blocksnet
+version=version 1.0
+changelog=1.0 - Initial release
+    Initial release
+author=Vasilii Starikov
+email=vasilstar97@gmail.com
+hasProcessingProvider=yes
+category=Analysis
+tags=blocks,provision
+homepage=https://github.com/vasilstar97/blocksnet-qgis
+repository=https://github.com/vasilstar97/blocksnet-qgis
+tracker=https://github.com/vasilstar97/blocksnet-qgis/issues
+experimental=True
+deprecated=False
