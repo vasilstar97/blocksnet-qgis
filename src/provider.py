@@ -4,8 +4,8 @@ from .algorithms import *
 
 class BlocksNetProvider(QgsProcessingProvider):
     def loadAlgorithms(self):
+        self.addAlgorithm(InstallEnvironmentAlgorithm())
         self.addAlgorithm(BlocksCuttingAlgorithm())
-        ...
 
     def id(self):
         return "blocksnet"
