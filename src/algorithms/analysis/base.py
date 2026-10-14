@@ -6,4 +6,4 @@ class AnalysisAlgorithm(BaseAlgorithm):
         return "analysis"
 
     def group(self):
-        return "2. Analysis"
+        return "4. Analysis"

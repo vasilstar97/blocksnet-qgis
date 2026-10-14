@@ -12,6 +12,8 @@ class BlocksNetProvider(QgsProcessingProvider):
         # 3. Accessibility
         self.addAlgorithm(GraphAlgorithm())
         self.addAlgorithm(MatrixAlgorithm())
+        # 4. Analysis
+        self.addAlgorithm(AccessibilityAlgorithm())
 
     def id(self):
         return "blocksnet"
