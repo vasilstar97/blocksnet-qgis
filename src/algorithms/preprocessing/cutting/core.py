@@ -7,16 +7,18 @@ from qgis.core import (
     QgsProcessingParameterVectorDestination,
     QgsProcessingException
 )
-from .base import PreprocessingAlgorithm
-from ...config import Config
-from ..environment import run_command
+from ..base import PreprocessingAlgorithm
+from ....environment import Config, run_command
+
+WORKER_SCRIPT = 'worker.py'
 
 class BlocksCuttingAlgorithm(PreprocessingAlgorithm):
 
     BOUNDARIES = "BOUNDARIES"
     ROADS = "ROADS"
     RAILWAYS = "RAILWAYS"
-    WATER = "WATER"
+    WATER_LINES = "WATER_LINES"
+    WATER_POLYGONS = "WATER_POLYGONS"
     OUTPUT = "OUTPUT"
 
     def name(self):
@@ -56,9 +58,17 @@ class BlocksCuttingAlgorithm(PreprocessingAlgorithm):
         )
         self.addParameter(
             QgsProcessingParameterVectorLayer(
-                self.WATER,
-                "Water objects (optional)",
-                types=[QgsProcessing.TypeVectorPolygon, QgsProcessing.TypeVectorLine],
+                self.WATER_LINES,
+                "Water objects (lines, optional)",
+                types=[QgsProcessing.TypeVectorLine],
+                optional=True
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterVectorLayer(
+                self.WATER_POLYGONS,
+                "Water objects (polygons, optional)",
+                types=[QgsProcessing.TypeVectorPolygon],
                 optional=True
             )
         )
@@ -81,61 +91,64 @@ class BlocksCuttingAlgorithm(PreprocessingAlgorithm):
         railways = self.parameterAsVectorLayer(
             parameters, self.RAILWAYS, context
         )
-        water = self.parameterAsVectorLayer(
-            parameters, self.WATER, context
+        water_lines = self.parameterAsVectorLayer(
+            parameters, self.WATER_LINES, context
+        )
+        water_polygons = self.parameterAsVectorLayer(
+            parameters, self.WATER_POLYGONS, context
         )
 
-        # 2. Проверяем обязательные слои.
-        for name, layer in (
-            ("City boundaries", boundaries),
-            ("Roads", roads),
-        ):
-            if layer is None or not layer.isValid():
-                raise QgsProcessingException(
-                    f"A valid '{name}' layer is required."
-                )
+        # # 2. Проверяем обязательные слои.
+        # for name, layer in (
+        #     ("City boundaries", boundaries),
+        #     ("Roads", roads),
+        # ):
+        #     if layer is None or not layer.isValid():
+        #         raise QgsProcessingException(
+        #             f"A valid '{name}' layer is required."
+        #         )
 
-        # 3. Проверяем CRS, но не перепроецируем данные.
-        layers = {
-            "City boundaries": boundaries,
-            "Roads": roads,
-            "Railways": railways,
-            "Water": water,
-        }
+        # # 3. Проверяем CRS, но не перепроецируем данные.
+        # layers = {
+        #     "City boundaries": boundaries,
+        #     "Roads": roads,
+        #     "Railways": railways,
+        #     "Water": water,
+        # }
 
-        for name, layer in layers.items():
-            if layer is None:
-                continue
+        # for name, layer in layers.items():
+        #     if layer is None:
+        #         continue
 
-            if not layer.crs().isValid():
-                raise QgsProcessingException(
-                    f"Layer '{name}' has no valid CRS."
-                )
+        #     if not layer.crs().isValid():
+        #         raise QgsProcessingException(
+        #             f"Layer '{name}' has no valid CRS."
+        #         )
 
-        reference_crs = boundaries.crs()
+        # reference_crs = boundaries.crs()
 
-        for name, layer in layers.items():
-            if layer is not None and layer.crs() != reference_crs:
-                raise QgsProcessingException(
-                    f"Layer '{name}' uses CRS "
-                    f"{layer.crs().authid()}, but boundaries use "
-                    f"{reference_crs.authid()}. "
-                    "Reproject the input layers to a common CRS first."
-                )
+        # for name, layer in layers.items():
+        #     if layer is not None and layer.crs() != reference_crs:
+        #         raise QgsProcessingException(
+        #             f"Layer '{name}' uses CRS "
+        #             f"{layer.crs().authid()}, but boundaries use "
+        #             f"{reference_crs.authid()}. "
+        #             "Reproject the input layers to a common CRS first."
+        #         )
 
-        if reference_crs.isGeographic():
-            feedback.pushWarning(
-                "The input CRS is geographic. Make sure it is suitable "
-                "for BlocksNet's spatial operations; a projected CRS "
-                "is generally preferable."
-            )
+        # if reference_crs.isGeographic():
+        #     feedback.pushWarning(
+        #         "The input CRS is geographic. Make sure it is suitable "
+        #         "for BlocksNet's spatial operations; a projected CRS "
+        #         "is generally preferable."
+        #     )
 
         # 4. Получаем Python из окружения BlocksNet.
         python_exe = Config.get_environment()
 
         # 5. Определяем внешний скрипт.
         worker_script = Path(__file__).with_name(
-            "cutting_worker.py"
+            WORKER_SCRIPT
         )
 
         # 6. Экспортируем входы во временные GeoPackage
@@ -183,13 +196,22 @@ class BlocksCuttingAlgorithm(PreprocessingAlgorithm):
                     "--railways", str(railways_path)
                 ])
 
-            if water is not None:
-                water_path = temp_dir / "water.gpkg"
+            if water_lines is not None:
+                water_lines_path = temp_dir / "water_lines.gpkg"
                 self._export_layer(
-                    water, water_path, context
+                    water_lines, water_lines_path, context
                 )
                 command.extend([
-                    "--water", str(water_path)
+                    "--water_lines", str(water_lines_path)
+                ])
+
+            if water_polygons is not None:
+                water_polygons_path = temp_dir / "water_polygons.gpkg"
+                self._export_layer(
+                    water_polygons, water_polygons_path, context
+                )
+                command.extend([
+                    "--water_polygons", str(water_polygons_path)
                 ])
 
             feedback.pushInfo(

@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 import geopandas as gpd
+import pandas as pd
 
 from blocksnet.blocks.cutting import (
     preprocess_urban_objects,
@@ -16,7 +17,8 @@ def parse_args():
     parser.add_argument("--boundaries", required=True)
     parser.add_argument("--roads", required=True)
     parser.add_argument("--railways")
-    parser.add_argument("--water")
+    parser.add_argument("--water_lines")
+    parser.add_argument("--water_polygons")
     parser.add_argument("--output", required=True)
 
     return parser.parse_args()
@@ -36,10 +38,24 @@ def main():
         else None
     )
 
-    water_gdf = (
-        gpd.read_file(args.water)
-        if args.water
+    water_lines_gdf = (
+        gpd.read_file(args.water_lines)
+        if args.water_lines
         else None
+    )
+
+    water_polygons_gdf = (
+        gpd.read_file(args.water_polygons)
+        if args.water_polygons
+        else None
+    )
+
+    water_gdf = gpd.GeoDataFrame(
+        pd.concat(
+            [water_lines_gdf, water_polygons_gdf],
+            ignore_index=True,
+        ),
+        crs=water_lines_gdf.crs,
     )
 
     print("Preprocessing urban objects...", flush=True)

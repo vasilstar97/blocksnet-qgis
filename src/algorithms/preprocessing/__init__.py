@@ -1,1 +1,1 @@
-from .cutting import BlocksCuttingAlgorithm
+from .cutting import *

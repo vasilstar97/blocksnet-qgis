@@ -438,3 +438,16 @@ def install_environment(
     log(feedback, f"Python executable: {env_python}")
 
     return str(env_python)
+
+__all__=[
+    "log",
+    "find_any_python",
+    "get_uv_install_dir",
+    "get_uv_executable",
+    "get_uv_asset",
+    "ensure_uv",
+    "run_command",
+    "get_environment_python",
+    "check_environment_python",
+    "install_environment"
+]

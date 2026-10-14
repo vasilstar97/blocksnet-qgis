@@ -4,8 +4,7 @@ from qgis.core import (
     QgsProcessingException
 )
 from .base import EnvironmentAlgorithm
-from .utils import install_environment
-from ...config import Config
+from ...environment import Config, install_environment
 
 class InstallEnvironmentAlgorithm(EnvironmentAlgorithm):
 
